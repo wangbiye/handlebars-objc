@@ -1,112 +1,48 @@
 //
-//  HBTestData.m
-//  handlebars-objc
+//  ViewController.m
+//  Test
 //
-//  Created by Bertrand Guiheneuf on 3/25/14.
-//  Copyright (c) 2014 Fotonauts. All rights reserved.
+//  Created by 王碧野 on 2022/9/6.
 //
 
+#import "ViewController.h"
+#import <HBHandlebars/HBHandlebars.h>
+#import <YHFoundation/YHFoundationConstants.h>
 
-#import "HBTestCase.h"
-#import "HBHandlebars.h"
-#import <Foundation/Foundation.h>
-
-#define YHLog(format, ...) printf("Class: <%s:(%d)>\nMethod: %s \n%s\n", [[[NSString stringWithUTF8String:__FILE__] lastPathComponent] UTF8String], __LINE__, __PRETTY_FUNCTION__, [[NSString stringWithFormat:(format), ##__VA_ARGS__] UTF8String] )
+@interface ViewController ()
 
 
-@interface HBTestData : HBTestCase
 
 @end
 
-@implementation HBTestData
+@implementation ViewController
 
-- (HBHelperBlock) letHelper
-{
-    return ^(HBHelperCallingInfo* callingInfo) {
-        
-        HBDataContext* currentDataContext = callingInfo.data;
-        HBDataContext* descendantDataContext = currentDataContext ? [currentDataContext copy] : [HBDataContext new];
-        
-        for (NSString* paramName in callingInfo.namedParameters) {
-            descendantDataContext[paramName] = callingInfo.namedParameters[paramName];
-        }
-        
-        return callingInfo.statements(callingInfo.context, descendantDataContext);
-    };
+- (void)viewDidLoad {
+    [super viewDidLoad];
+    self.view.backgroundColor = UIColor.whiteColor;
+    [self testYHData];
 }
 
 - (HBHelperBlock)iffHelper {
     __weak __typeof__(self) weakSelf = self;
-    return [^(HBHelperCallingInfo *callingInfo) {
+    return ^(HBHelperCallingInfo *callingInfo) {
         HBDataContext *currentDataContext = callingInfo.data;
-        HBDataContext *descendantDataContext = currentDataContext ? [currentDataContext copy] : [HBDataContext new];
         // 获取传入的条件表达式
         NSString *condition = callingInfo.positionalParameters.firstObject;
         BOOL result = [weakSelf compareConditionString:condition hash:[currentDataContext dataForKey:@"root"]];
-        // 将 BOOL 类型的结果转换为字符串
-        NSString *resultString = result ? @"true" : @"false";
+        NSString *resultString = result ? callingInfo.statements(callingInfo.context, callingInfo.data) : nil;
         
         // 返回处理结果
         return resultString;
-    } copy];
-}
-
-- (HBHelperBlock) helloHelper
-{
-    return ^(HBHelperCallingInfo* callingInfo) {
-        return [NSString stringWithFormat:@"Hello %@", callingInfo[@"noun"]];
     };
 }
 
-- (void) testDeepAtFooTriggersAutomaticTopLevelData
-{
-    NSError* error = nil;
-    id string = @"{{#let world='world'}}{{#if foo}}{{#if foo}}Hello {{@world}}{{/if}}{{/if}}{{/let}}";
-    id hash = @{ @"foo" : @true };
-    NSDictionary* helpers = @{ @"let" : [self letHelper]};
-    
-    NSString* result = [self renderTemplate:string withContext:hash withHelpers:helpers error:&error];
-    XCTAssert(!error, @"evaluation should not generate an error");
-    XCTAssertEqualObjects(result, @"Hello world");
+- (NSString *)renderTemplate:(NSString *)template withContext:(id)context withHelpers:(NSDictionary *)helpers withPartials:(NSDictionary *)partials error:(NSError **)error {
+    return [HBHandlebars renderTemplateString:template withContext:context withHelperBlocks:helpers withPartialStrings:partials error:error];
 }
 
-- (void) testDataIsInheritedDownstream
-{
-    NSError* error = nil;
-    id string = @"{{#let foo=1 bar=2}}{{#let foo=bar.baz}}{{@bar}}{{@foo}}{{/let}}{{@foo}}{{/let}}";
-    id hash = @{ @"bar": @{ @"baz": @"hello world" } };
-    NSDictionary* helpers = @{ @"let" : [self letHelper]};
-    
-    NSString* result = [self renderTemplate:string withContext:hash withHelpers:helpers error:&error];
-    YHLog(@"最终结果:\n%@", result);
-    XCTAssert(!error, @"evaluation should not generate an error");
-    XCTAssertEqualObjects(result, @"2hello world1");
-}
-
-- (void) testTheRootContextCanBeLookedUpViaAtRoot
-{
-    NSError* error = nil;
-    id string = @"{{@root.foo}}";
-    id hash = @{ @"foo" : @"hello" };
-    NSDictionary* helpers = @{ @"let" : [self letHelper]};
-    
-    NSString* result = [self renderTemplate:string withContext:hash withHelpers:helpers error:&error];
-    YHLog(@"最终结果:\n%@", result);
-    XCTAssert(!error, @"evaluation should not generate an error");
-    XCTAssertEqualObjects(result, @"hello");
-}
-
-- (void) testDataContextCanBeClimbedUp
-{
-    NSError* error = nil;
-    id string = @"{{#let foo=1}}{{#let foo=2}}{{#let foo=3}} {{ @foo }} {{ @./foo }} {{ @../foo }} {{ @../../foo }} {{/let}}{{/let}}{{/let}}";
-    id hash = @{};
-    NSDictionary *helpers = @{ @"let" : [self letHelper]};
-    
-    NSString *result = [self renderTemplate:string withContext:hash withHelpers:helpers error:&error];
-    NSLog(@"%@", result);
-    XCTAssert(!error, @"evaluation should not generate an error");
-    XCTAssertEqualObjects(result, @" 3 3 2 1 ");
+- (NSString *)renderTemplate:(NSString *)template withContext:(id)context withHelpers:(NSDictionary *)helpers error:(NSError **)error {
+    return [self renderTemplate:template withContext:context withHelpers:helpers withPartials:nil error:error];
 }
 
 - (void)testYHData {
@@ -147,33 +83,6 @@
     
     NSString *result = [self renderTemplate:renderTemplate withContext:hash withHelpers:helpers error:&renderError];
     YHLog(@"最终结果:\n%@", result);
-    XCTAssert(!error, @"evaluation should not generate an error");
-}
-
-- (void)testIf {
-    NSError *error;
-    NSString *filePath = [[NSBundle bundleForClass:[self class]] pathForResource:@"data" ofType:@"json"];
-    NSData *jsonData = [NSData dataWithContentsOfFile:filePath options:NSDataReadingMappedIfSafe error:&error];
-    NSDictionary *hash = @{};
-    if (jsonData) {
-        hash = [NSJSONSerialization JSONObjectWithData:jsonData options:NSJSONReadingMutableContainers error:&error];
-        if (hash) {
-            // 在这里可以使用读取到的字典数据进行后续操作
-//            NSLog(@"读取到的业务数据: %@", helpers);
-            hash = @{@"isPrintCount": @(true)};
-            if (YES) {
-                NSLog(@"printCount存在且大于1");
-            } else {
-                NSLog(@"printCount不存在或者小于等于1");
-            }
-        } else {
-            NSLog(@"读取业务数据出错: %@", error);
-            return;
-        }
-    } else {
-        NSLog(@"读取业务数据出错: %@", error);
-        return;
-    }
 }
 
 - (void)testPredicate {
@@ -255,6 +164,10 @@
 
 }
 
+/// 结合业务数据解析字符串, 得到最终的布尔值
+/// - Parameters:
+///   - string: 字符串表达式
+///   - hash: 业务数据
 - (BOOL)compareConditionString:(NSString *)string hash:(NSDictionary *)hash {
     if ([string isEqualToString:@"true"] || [string isEqualToString:@"false"]) {
         return [string isEqualToString:@"true"];
@@ -273,19 +186,13 @@
         }
     }
     
-    NSString *result = [convertedConditions componentsJoinedByString:@" "];
-    if ([result containsString:@"&&"] || [result containsString:@"||"]) {
-        // 含有连接符
-        NSPredicate *predicate = [NSPredicate predicateWithFormat:@"SELF == 1"];
-        BOOL compareResult = [predicate evaluateWithObject:[NSNumber numberWithBool:[result boolValue]]];
-        return compareResult;
-    } else {
-        BOOL boolResult = [result boolValue];
-        return boolResult;
-    }
-    
+    NSString *expression = [convertedConditions componentsJoinedByString:@""];
+    NSLog(@"待解析表达式: %@", expression);
+    BOOL boolResult = [self evaluateExpression:expression];
+    return boolResult;
 }
 
+/// 分割拆解字符串表达式
 - (NSArray *)splitConditionsAndOperators:(NSString *)string {
     NSMutableArray *splitConditionsAndOperators = [NSMutableArray array];
     NSUInteger lastMatchEnd = 0;
@@ -338,17 +245,12 @@
     return splitConditionsAndOperators;
 }
 
-
-- (NSArray *)splitStringWithParentheses:(NSString *)string {
-    NSString *subString = [string substringWithRange:NSMakeRange(1, string.length - 2)];
-    return [self splitConditionsAndOperators:subString];
-}
-
+/// 对比运算拆解后的单个小表达式
 - (BOOL)compareSingleCondition:(NSString *)condition hash:(NSDictionary *)hash {
     NSString *compareCondition = condition;
     
     if ([compareCondition containsString:@"=="] || [compareCondition containsString:@"!="]) {
-        NSString *pattern = @"\\s*(\\w+)\\s*([!=]+)\\s*('[^']*'|\"[^\"]*\"|\\w+)";
+        NSString *pattern = @"\\s*([\\w\\.]+)\\s*([!=]{1,2})\\s*('[^']*'|\"[^\"]*\"|\\w+)";
         NSRegularExpression *regex = [NSRegularExpression regularExpressionWithPattern:pattern options:0 error:nil];
         NSTextCheckingResult *checkingResult = [regex firstMatchInString:compareCondition options:0 range:NSMakeRange(0, compareCondition.length)];
 
@@ -384,37 +286,41 @@
 
             // 从业务数据中取值
             id hashValue = [hash valueForKeyPath:leftString];
-            BOOL isNumber = NO;
+            double hashValueNumber = 0;
             if ([hashValue isKindOfClass:NSString.class]) {
                 // 正则判断 hash value 是不是数字
                 NSString *numberPattern = @"^-?\\d+(\\.\\d+)?$";
                 NSPredicate *numberPredicate = [NSPredicate predicateWithFormat:@"SELF MATCHES %@", numberPattern];
-                isNumber = [numberPredicate evaluateWithObject:hashValue];
-            } else if ([hashValue isKindOfClass:NSNumber.class]) {
-                isNumber = YES;
-            }
-            
-            if (isNumber) {
-                // 将字符串转换为数值
-                double leftOperand = [leftString doubleValue];
-                double rightOperand = [rightString doubleValue];
-
-                // 执行比较操作
-                BOOL compareResult = NO;
-                if ([operatorString isEqualToString:@"<"]) {
-                    compareResult = (leftOperand < rightOperand);
-                } else if ([operatorString isEqualToString:@"<="]) {
-                    compareResult = (leftOperand <= rightOperand);
-                } else if ([operatorString isEqualToString:@">"]) {
-                    compareResult = (leftOperand > rightOperand);
-                } else if ([operatorString isEqualToString:@">="]) {
-                    compareResult = (leftOperand >= rightOperand);
+                BOOL isNumber = [numberPredicate evaluateWithObject:hashValue];
+                if (isNumber) {
+                    hashValueNumber = [hashValue doubleValue];
+                } else {
+                    NSLog(@"❌业务数据中对应的值不是数字类型, 无法对比: %@❌", hashValue);
+                    return NO;
                 }
-                return compareResult;
+            } else if ([hashValue isKindOfClass:NSNumber.class]) {
+                hashValueNumber = [hashValue doubleValue];
             } else {
-                NSLog(@"❌业务数据中对应的值不是数字类型, 无法对比: %@❌", hashValue);
+                NSLog(@"❌业务数据中对应的值类型异常, 无法对比: %@❌", hashValue);
                 return NO;
             }
+            
+            // 将字符串转换为数值
+            double leftOperand = hashValueNumber;
+            double rightOperand = [rightString doubleValue];
+            
+            // 执行比较操作
+            BOOL compareResult = NO;
+            if ([operatorString isEqualToString:@"<"]) {
+                compareResult = (leftOperand < rightOperand);
+            } else if ([operatorString isEqualToString:@"<="]) {
+                compareResult = (leftOperand <= rightOperand);
+            } else if ([operatorString isEqualToString:@">"]) {
+                compareResult = (leftOperand > rightOperand);
+            } else if ([operatorString isEqualToString:@">="]) {
+                compareResult = (leftOperand >= rightOperand);
+            }
+            return compareResult;
         }
         // 分割失败
         NSLog(@"❌表达式拆解错误: %@❌", compareCondition);
@@ -434,6 +340,8 @@
             // 其他数值类型
             compareCondition = [NSString stringWithFormat:@"%@ != nil", compareCondition];
         }
+    } else if ([hashValue isKindOfClass:NSString.class]) {
+        compareCondition = [NSString stringWithFormat:@"%@ != nil && %@ != \"\"", compareCondition, compareCondition];
     } else {
         // 其他类型
         compareCondition = [NSString stringWithFormat:@"%@ != nil", compareCondition];
@@ -443,6 +351,7 @@
     return compareResults;
 }
 
+/// 是否相等的表达式对比方法
 - (BOOL)isEqualWithJsonValue:(id)jsonValue operator:(NSString *)operator stringValue:(NSString *)strValue {
     if (jsonValue == nil || operator == nil || strValue == nil) {
         return NO;
@@ -479,6 +388,54 @@
     return NO;
 }
 
+/// 解析最终的布尔表达式, 例如"0&&(0||(0&&(0||0||0)))"
+- (BOOL)evaluateExpression:(NSString *)expression {
+    // 删除空格
+    expression = [expression stringByReplacingOccurrencesOfString:@" " withString:@""];
+    
+    // 递归处理括号
+    NSUInteger leftParanthesisIndex = [expression rangeOfString:@"("].location;
+    while (leftParanthesisIndex != NSNotFound) {
+        NSUInteger rightParanthesisIndex = [expression rangeOfString:@")"
+                                                            options:0
+                                                              range:NSMakeRange(leftParanthesisIndex, expression.length - leftParanthesisIndex)].location;
+        if (rightParanthesisIndex == NSNotFound) {
+            NSLog(@"Error: Invalid expression - %@", expression);
+            return NO;
+        }
+        NSString *innerExpression = [expression substringWithRange:NSMakeRange(leftParanthesisIndex + 1, rightParanthesisIndex - leftParanthesisIndex - 1)];
+        BOOL innerResult = [self evaluateExpression:innerExpression];
+        expression = [expression stringByReplacingCharactersInRange:NSMakeRange(leftParanthesisIndex, rightParanthesisIndex - leftParanthesisIndex + 1)
+                                                         withString:innerResult ? @"1" : @"0"];
+        leftParanthesisIndex = [expression rangeOfString:@"("].location;
+    }
+    
+    // 递归处理 "||" 运算符
+    NSArray *orComponents = [expression componentsSeparatedByString:@"||"];
+    if ([orComponents count] > 1) {
+        for (NSString *component in orComponents) {
+            if ([self evaluateExpression:component]) return YES;
+        }
+        return NO;
+    }
+    
+    // 递归处理 "&&" 运算符
+    NSArray *andComponents = [expression componentsSeparatedByString:@"&&"];
+    if ([andComponents count] > 1) {
+        for (NSString *component in andComponents) {
+            if (![self evaluateExpression:component]) return NO;
+        }
+        return YES;
+    }
+    
+    // 检查是否只是简单的 "0" 或 "1"
+    if ([expression isEqualToString:@"0"]) return NO;
+    if ([expression isEqualToString:@"1"]) return YES;
+    
+    // 如果不符合以上任何情况，返回错误
+    NSLog(@"Error: Invalid expression - %@", expression);
+    return NO;
+}
 
 
 @end
