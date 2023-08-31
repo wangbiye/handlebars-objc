@@ -158,8 +158,8 @@ static HBBuiltinHelpersRegistry* _builtinHelpersRegistry = nil;
             
         } else if (expression && [HBHelperUtils isEnumerableByKey:expression]) {
             // Dictionary-like context
-            if (![expression conformsToProtocol:@protocol(NSFastEnumeration)]) return (NSString*)nil;
-            id<NSFastEnumeration> dictionaryLike = expression;
+            if (![expression isKindOfClass:NSDictionary.class]) return (NSString*)nil;
+            NSDictionary *dictionaryLike = (NSDictionary*)expression;
 
             HBDataContext* dictionaryData = currentData ? [currentData copy] : [HBDataContext new];
             NSMutableString* result = [NSMutableString string];
