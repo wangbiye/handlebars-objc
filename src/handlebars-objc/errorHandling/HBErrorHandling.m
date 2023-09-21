@@ -51,13 +51,12 @@ NSString* HBPartialNameKey = @"HBPartialNameKey";
 
 + (instancetype) parseErrorWithLineNumber:(NSInteger)lineNumber positionInBuffer:(NSInteger)positionInBuffer contextInBuffer:(NSString*)context lowLevelParserDescription:(NSString*)parserError
 {
-    NSDictionary* userInfo = @{
-                               HBLineNumberKey: @(lineNumber),
-                               HBPositionInBufferKey: @(positionInBuffer),
-                               HBContextInBufferKey: context,
-                               HBParserLowLevelDescriptionKey: parserError
-                            };
-    return [HBParseError errorWithDomain:HBErrorDomain code:HBErrorCodeGenericParseError userInfo:userInfo];
+    NSMutableDictionary *userInfo = [NSMutableDictionary dictionary];
+    userInfo[HBLineNumberKey] = @(lineNumber);
+    userInfo[HBPositionInBufferKey] = @(positionInBuffer);
+    userInfo[HBContextInBufferKey] = context;
+    userInfo[HBParserLowLevelDescriptionKey] = parserError;
+    return [HBParseError errorWithDomain:HBErrorDomain code:HBErrorCodeGenericParseError userInfo:userInfo.copy];
 }
 
 - (NSInteger) lineNumber
@@ -91,8 +90,9 @@ NSString* HBPartialNameKey = @"HBPartialNameKey";
 
 + (instancetype) HBHelperMissingErrorWithHelperName:(NSString*)helperName
 {
-    NSDictionary* userInfo = @{ HBHelperNameKey: helperName };
-    return [HBHelperMissingError errorWithDomain:HBErrorDomain code:HBErrorCodeHelperMissingError userInfo:userInfo];
+    NSMutableDictionary *userInfo = [NSMutableDictionary dictionary];
+    userInfo[HBHelperNameKey] = helperName;
+    return [HBHelperMissingError errorWithDomain:HBErrorDomain code:HBErrorCodeHelperMissingError userInfo:userInfo.copy];
 }
 
 - (NSString*) helperName
@@ -106,8 +106,9 @@ NSString* HBPartialNameKey = @"HBPartialNameKey";
 
 + (instancetype) HBPartialMissingErrorWithPartialName:(NSString*)partialName
 {
-    NSDictionary* userInfo = @{ HBPartialNameKey: partialName };
-    return [HBPartialMissingError errorWithDomain:HBErrorDomain code:HBErrorCodePartialMissingError userInfo:userInfo];
+    NSMutableDictionary *userInfo = [NSMutableDictionary dictionary];
+    userInfo[HBPartialNameKey] = partialName;
+    return [HBPartialMissingError errorWithDomain:HBErrorDomain code:HBErrorCodePartialMissingError userInfo:userInfo.copy];
 
 }
 
