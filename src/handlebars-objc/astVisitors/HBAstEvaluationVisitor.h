@@ -29,11 +29,14 @@
 
 @class HBHelperRegistry;
 @class HBTemplate;
+@class HBContextStack;
 
 @interface HBAstEvaluationVisitor : HBAstVisitor
 
 @property (retain, nonatomic) HBTemplate* template;
 @property (retain, nonatomic) NSError* error;
+
+@property (retain, nonatomic) HBContextStack* contextStack;
 
 - (id) initWithTemplate:(HBTemplate*)template;
 

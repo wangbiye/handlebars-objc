@@ -45,8 +45,9 @@
 #import "HBEscapedString_Private.h"
 
 @interface HBAstEvaluationVisitor()
-@property (retain, nonatomic) HBContextStack* contextStack;
+
 @property (retain, nonatomic) NSMutableArray* escapingModeStack;
+
 @end
 
 //
