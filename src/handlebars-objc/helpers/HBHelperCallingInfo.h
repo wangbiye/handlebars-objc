@@ -30,6 +30,7 @@
 
 @class HBDataContext;
 @class HBTemplate;
+@class HBAstEvaluationVisitor;
 
 typedef NSString* (^HBStatementsEvaluator)(id context, HBDataContext* data);
 
@@ -241,6 +242,9 @@ typedef NS_ENUM(NSUInteger, HBHelperInvocationKind) {
  @since v1.1
  */
 @property (readonly, retain, nonatomic) HBTemplate* template;
+
+/// 从`HBHelperCallingInfo_Private.h`中暴漏出来
+@property (readonly, assign, nonatomic) HBAstEvaluationVisitor* evaluationVisitor;
     
 /** @name Accessing calling parameters using Objective-C subscripting notation */
 
